@@ -1,7 +1,10 @@
 package ru.sbt.jschool.session6.util.JSONGenerator;
 
 import org.apache.commons.lang3.ClassUtils;
-import ru.sbt.jschool.session6.util.JSONGenerator.objects.*;
+import ru.sbt.jschool.session6.util.JSONGenerator.objects.CalendarJSON;
+import ru.sbt.jschool.session6.util.JSONGenerator.objects.DateJSON;
+import ru.sbt.jschool.session6.util.JSONGenerator.objects.ObjectJSON;
+import ru.sbt.jschool.session6.util.JSONGenerator.objects.StringJSON;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -33,7 +36,7 @@ public class JSONGenerator {
     private StringBuilder generateObject(Object obj, String name, int tabs) {
         StringBuilder sb = new StringBuilder();
         if (obj == null) {
-            sb.append(appendString(tabs, name,  new StringBuilder("null")));
+            sb.append(appendString(tabs, name, new StringBuilder("null")));
         } else if (ClassUtils.isPrimitiveOrWrapper(obj.getClass())) {
             sb.append(appendString(tabs, name, new StringBuilder(obj.toString())));
         } else if (obj.getClass().isArray()) {
@@ -61,10 +64,9 @@ public class JSONGenerator {
 
     private StringBuilder appendString(int tabs, String name, StringBuilder object) {
         StringBuilder sb = new StringBuilder();
-        if(name.equals("")) {
+        if (name.equals("")) {
             sb.append(String.format(UNNAMED_OBJ, shift(tabs), object));
-        }
-        else {
+        } else {
             sb.append(String.format(NAMED_OBJ, shift(tabs), name, object));
         }
         return sb;
@@ -82,7 +84,7 @@ public class JSONGenerator {
             sb.append(generateFields(obj, fields, tabs));
             clazz = clazz.getSuperclass();
         } while (clazz != null);
-        sb.deleteCharAt(sb.length() - 2);
+        //sb.deleteCharAt(sb.length() - 2);
         tabs--;
         sb.append(String.format(END, JSONUtil.shift(tabs)));
         return sb;
@@ -103,6 +105,7 @@ public class JSONGenerator {
             try {
                 fieldObj = field.get(obj);
             } catch (IllegalAccessException e) {
+                e.printStackTrace();
             }
             sb.append(generateObject(fieldObj, fieldName, tabs));
             if (i < fields.length - 1)

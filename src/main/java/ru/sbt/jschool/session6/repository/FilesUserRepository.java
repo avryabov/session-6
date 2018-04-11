@@ -1,64 +1,55 @@
 package ru.sbt.jschool.session6.repository;
 
 import ru.sbt.jschool.session6.model.User;
+import ru.sbt.jschool.session6.util.exception.NotFoundException;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class FilesUserRepository implements UserRepository {
-    private final static String DIR = "d:/db";
-    File folder = new File(DIR);
+    private File folder;
 
+    public FilesUserRepository(String path) {
+        this.folder = new File(path);
+    }
 
     @Override
     public User save(User user) {
-        System.out.println("SAVE");
-        System.out.println(user);
         int index = currentIndex();
         user.setId(index);
-        writeObj(new File(folder, index+".bin"), user);
+        writeObj(new File(folder, index + ".bin"), user);
         return user;
     }
 
     @Override
     public boolean delete(int id) {
-        System.out.println("DELETE");
         List<File> fileList = fileList();
-        for (int i = 0; i < fileList.size(); i++)
-        {
+        for (int i = 0; i < fileList.size(); i++) {
             File entry = fileList.get(i);
-            if(entry.getName().equals(id+".bin")) {
-                entry.delete();
-                return true;
+            if (entry.getName().equals(id + ".bin")) {
+                return entry.delete();
             }
         }
         return false;
     }
 
     @Override
-    public User get(int id) {
-        System.out.println("GET");
+    public User get(int id) throws NotFoundException {
         List<File> fileList = fileList();
-        for (int i = 0; i < fileList.size(); i++)
-        {
+        for (int i = 0; i < fileList.size(); i++) {
             File entry = fileList.get(i);
-            if(entry.getName().equals(id+".bin")) {
+            if (entry.getName().equals(id + ".bin")) {
                 return readObj(entry);
             }
         }
-        return null;
+        throw new NotFoundException("User with id = " + id + " not found");
     }
 
     @Override
     public List<User> getAll() {
-        System.out.println("LIST");
         List<User> list = new ArrayList<>();
         List<File> fileList = fileList();
-        for (int i = 0; i < fileList.size(); i++)
-        {
+        for (int i = 0; i < fileList.size(); i++) {
             File entry = fileList.get(i);
             list.add(readObj(entry));
         }
@@ -68,10 +59,9 @@ public class FilesUserRepository implements UserRepository {
 
     private int currentIndex() {
         List<File> fileList = fileList();
-        for (int i = 0; i < fileList.size(); i++)
-        {
+        for (int i = 0; i < fileList.size(); i++) {
             File entry = fileList.get(i);
-            if(!entry.getName().equals(i+".bin"))
+            if (!entry.getName().equals(i + ".bin"))
                 return i;
         }
         return fileList.size();
@@ -79,6 +69,8 @@ public class FilesUserRepository implements UserRepository {
 
     private List<File> fileList() {
         File[] folderEntries = folder.listFiles();
+        if(folderEntries == null)
+            return Collections.emptyList();
         ArrayList<File> fileList = new ArrayList<>(Arrays.asList(folderEntries));
         fileList.sort(new Comparator<File>() {
             @Override
@@ -92,8 +84,8 @@ public class FilesUserRepository implements UserRepository {
     }
 
     private void writeObj(File file, User user) {
-        try(FileOutputStream fos = new FileOutputStream(file);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);) {
+        try (FileOutputStream fos = new FileOutputStream(file);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(user);
             oos.flush();
         } catch (IOException e) {
@@ -103,7 +95,7 @@ public class FilesUserRepository implements UserRepository {
 
     private User readObj(File file) {
         try (FileInputStream fis = new FileInputStream(file);
-             ObjectInputStream oin = new ObjectInputStream(fis);) {
+             ObjectInputStream oin = new ObjectInputStream(fis)) {
             return (User) oin.readObject();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();

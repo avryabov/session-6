@@ -3,36 +3,55 @@ package ru.sbt.jschool.session6.controller;
 import ru.sbt.jschool.session6.model.User;
 import ru.sbt.jschool.session6.service.UserServiceImpl;
 import ru.sbt.jschool.session6.util.JSONGenerator.JSONGenerator;
+import ru.sbt.jschool.session6.util.exception.NotFoundException;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UserController {
     UserServiceImpl service;
     JSONGenerator jsonGenerator;
+
+    Map<Integer, String> codeMap = new HashMap<>();
+
+    {
+        codeMap.put(200, "OK");
+        codeMap.put(400, "Bad Request");
+        codeMap.put(404, "Not Found");
+    }
 
     public UserController(UserServiceImpl service) {
         this.service = service;
         this.jsonGenerator = new JSONGenerator();
     }
 
-    public void run(InputStream inputStream, OutputStream outputStream) throws IOException {
-        Object obj = doRequest(inputStream);
-        doResponse(outputStream, obj);
+    public void run(InputStream inputStream, OutputStream outputStream) {
+        Object obj = null;
+        int code = 200;
+        try {
+            obj = doRequest(inputStream);
+        } catch (NotFoundException e) {
+            code = 404;
+        } catch (IOException e) {
+            code = 400;
+        }
+        try {
+            doResponse(outputStream, code, obj);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private Object doRequest(InputStream inputStream) throws IOException {
+    private Object doRequest(InputStream inputStream) throws NotFoundException, IOException {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
         String message;
-        while ((message = bufferedReader.readLine()) != null) {
+        if ((message = bufferedReader.readLine()) != null) {
             String[] request = message.split("\\s|/|\\?|=|&");
-
-            for(int i = 0; i < request.length; i++) {
-                System.out.println(i + "=" + request[i]);
-            }
-
-            if(!request[0].equals("GET") | !request[2].equals("user")); //TODO
+            if (request.length < 3 | !request[0].equals("GET") | !request[2].equals("user"))
+                throw new IOException("Error request format");
             switch (request[3]) {
                 case "create":
                     return create(Arrays.copyOfRange(request, 3, request.length));
@@ -41,44 +60,49 @@ public class UserController {
                 case "list":
                     return list();
                 default:
-                    return getUser(request[3]);
+                    if (request[3].matches("\\d+"))
+                        return getUser(request[3]);
             }
         }
-        return null;
+        throw new IOException("Request is null");
     }
 
-    private void doResponse(OutputStream outputStream, Object obj) throws IOException {
-        PrintWriter out = new PrintWriter(outputStream);
-        out.println("HTTP/1.1 200 OK");
-        out.println("Content-Type: text/html");
-        out.println("\r\n");
-        String messege = jsonGenerator.generate(obj);
-        System.out.println(messege);
-        out.println("<pre>");
-        out.println(messege);
-        out.println("<pre>");
-        out.flush();
+    private void doResponse(OutputStream outputStream, int code, Object obj) throws IOException {
+        String message;
+        if (code == 200)
+            message = jsonGenerator.generate(obj);
+        else
+            message = codeMap.get(code);
+        message = "<pre>" + message + "<pre>";
+        String response = "HTTP/1.1 " + code + " " + codeMap.get(code) + "\r\n" +
+                "Server: HTTPDataBase\r\n" +
+                "Content-Type: text/html\r\n" +
+                "Content-Length: " + message.length() + "\r\n" +
+                "Connection: close\r\n\r\n";
+        String result = response + message;
+        outputStream.write(result.getBytes());
+        outputStream.flush();
     }
 
     private int create(String[] args) {
         User user = new User();
-        for(int i = 0; i < args.length; i++) {
+        for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "name":
-                    user.setName(args[i+1]);
+                    user.setName(args[i + 1]);
                     break;
                 case "age":
-                    user.setAge(Integer.parseInt(args[i+1]));
+                    user.setAge(Integer.parseInt(args[i + 1]));
                     break;
                 case "salary":
-                    user.setSalary(Integer.parseInt(args[i+1]));
+                    user.setSalary(Integer.parseInt(args[i + 1]));
                     break;
             }
         }
         return service.create(user).getId();
     }
 
-    private boolean delete(String id) {
+    private boolean delete(String id) throws NotFoundException {
         return service.delete(Integer.parseInt(id));
     }
 
@@ -86,7 +110,7 @@ public class UserController {
         return service.getAll();
     }
 
-    private User getUser(String id) {
+    private User getUser(String id) throws NotFoundException {
         return service.get(Integer.parseInt(id));
     }
 }

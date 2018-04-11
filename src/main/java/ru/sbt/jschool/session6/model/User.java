@@ -2,7 +2,7 @@ package ru.sbt.jschool.session6.model;
 
 import java.io.Serializable;
 
-public class User implements Serializable{
+public class User implements Serializable {
     private int id;
     private String name;
     private int age;
