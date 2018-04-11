@@ -28,7 +28,7 @@ public class UserController {
         this.jsonGenerator = new JSONGenerator();
     }
 
-    public void run(InputStream inputStream, OutputStream outputStream) {
+    public void doTask(InputStream inputStream, OutputStream outputStream) {
         Object obj = null;
         int code = 200;
         try {

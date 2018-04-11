@@ -36,7 +36,7 @@ public class HTTPDataBase {
         ServerSocket serverSocket = new ServerSocket(port);
         while (true) {
             Socket socket = serverSocket.accept();
-            controller.run(socket.getInputStream(), socket.getOutputStream());
+            controller.doTask(socket.getInputStream(), socket.getOutputStream());
         }
 
     }
