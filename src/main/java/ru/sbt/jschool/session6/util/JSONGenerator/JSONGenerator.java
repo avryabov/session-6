@@ -101,11 +101,11 @@ public class JSONGenerator {
             if (!field.isAccessible()) {
                 field.setAccessible(true);
             }
-            Object fieldObj = null;
+            Object fieldObj;
             try {
                 fieldObj = field.get(obj);
             } catch (IllegalAccessException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
             sb.append(generateObject(fieldObj, fieldName, tabs));
             if (i < fields.length - 1)

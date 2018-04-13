@@ -11,6 +11,8 @@ public class FilesUserRepository implements UserRepository {
 
     public FilesUserRepository(String path) {
         this.folder = new File(path);
+        if(!folder.exists())
+            folder.mkdir();
     }
 
     @Override
@@ -89,7 +91,7 @@ public class FilesUserRepository implements UserRepository {
             oos.writeObject(user);
             oos.flush();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -98,9 +100,8 @@ public class FilesUserRepository implements UserRepository {
              ObjectInputStream oin = new ObjectInputStream(fis)) {
             return (User) oin.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        return null;
     }
 
 }

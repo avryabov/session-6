@@ -41,7 +41,7 @@ public class UserController {
         try {
             doResponse(outputStream, code, obj);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
